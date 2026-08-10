@@ -872,6 +872,17 @@ function buildInsertsDraft() {
       start: +it.start, end: +it.end, ref: i,
     });
   });
+  // full-frame B-roll ("só b-roll") — the speaker leaves the frame and the clip
+  // owns all 1080×1920. A different component from the split band, but on the
+  // timeline it is an image-track element like any other, and it MUST be here:
+  // a window the user cannot see is a window the user cannot retime.
+  (d.fullInserts || []).forEach((it, i) => {
+    list.push({
+      kind: 'full',
+      label: it.label || (it.src || '').split('/').pop(),
+      start: +it.start, end: +it.end, ref: i,
+    });
+  });
   (d.behind || []).forEach((b, i) => {
     list.push({ kind: 'behind', label: `BEHIND ${b.kind === 'words' ? (b.words || []).map((w) => w.t).join(' ') : (b.src || '').split('/').pop()}`, start: +b.start, end: +b.start + +b.dur, ref: i });
   });
@@ -1867,6 +1878,7 @@ $('btnSave').addEventListener('click', async () => {
       inserts: S.insertsDraft.filter((c) => c.kind === 'insert').map((c) => ({ ref: c.ref, start: +c.start.toFixed(3), end: +c.end.toFixed(3) })),
       splitInserts: S.insertsDraft.filter((c) => c.kind === 'split').map((c) => ({ ref: c.ref, label: c.label, start: +c.start.toFixed(3), end: +c.end.toFixed(3) })),
       splitVideos: S.insertsDraft.filter((c) => c.kind === 'splitvideo').map((c) => ({ ref: c.ref, label: c.label, start: +c.start.toFixed(3), end: +c.end.toFixed(3) })),
+      fullInserts: S.insertsDraft.filter((c) => c.kind === 'full').map((c) => ({ ref: c.ref, label: c.label, start: +c.start.toFixed(3), end: +c.end.toFixed(3) })),
       hook: S.insertsDraft.filter((c) => c.kind === 'hook').map((c) => ({ endSec: +c.end.toFixed(3) }))[0] || null,
       behind: S.insertsDraft.filter((c) => c.kind === 'behind').map((c) => ({ ref: c.ref, start: +c.start.toFixed(3), dur: +(c.end - c.start).toFixed(3) })),
       wordAccents: S.insertsDraft.filter((c) => c.kind === 'word').map((c) => ({ ref: c.ref, text: c.label, start: +c.start.toFixed(3), end: +c.end.toFixed(3) })),
