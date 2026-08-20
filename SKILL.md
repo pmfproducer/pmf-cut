@@ -187,8 +187,11 @@ and the UI opens its own tab, sitting between FASE 1 and FASE 2:
   `scatter`/"Disperso") and three static (`simples`, `serifada`, `classica`).
 - **Elementos da edição** — checkboxes: `tracking` (movimento de tracking),
   `zoomAuto` (automação de zoom in), `zoomCuts` (zoom in/out nos cortes),
-  `flashCut` (flash na transição), `musicAI` (trilha sonora com IA), plus a
-  free-text observation field.
+  `flashCut` (flash na transição), `swipeCut` (swipe na transição),
+  `musicAI` (trilha sonora com IA), plus a free-text observation field.
+  `flashCut` and `swipeCut` share `transitions[]` and differ by `type` — and they
+  do NOT share a sound: flash is a click, swipe is a whoosh (peak-anchored) plus a
+  click. See the transitions section of the track reference before mixing.
 
 Saving writes `<edit>/preview_style.json` (its OWN file — a style pick and a
 timeline correction are different screens at different moments, and one shared
@@ -503,6 +506,8 @@ On startup, read it if it exists and summarize the last session in one sentence 
 - Committing a grade without the one-frame candidates montage + user pick.
 - Shipping a `cut.mp4` that is not tagged bt709/tv — Phase 2 will re-interpret it and the approved grade drifts.
 - Delivering Phase 2 with Remotion's own audio track — it drifts progressively against the source (+0.66s by 78s on a 95s edit). Re-mux `cut.mp4`'s audio and mix the soundtrack in ffmpeg (recipe in the track reference).
+- Rebuilding the transition SFX in the delivery mux as one click for every entry. Flash and swipe are different sounds — walk `transitions[]` and emit per `type`. It passes every numeric check (the audio IS there) and the swipe silently loses the whoosh that is its entire point.
+- Delaying a slow-attack SFX by the cut time. `whoosh.mp3` peaks 215ms into a 450ms swell, so that lands the hit after the picture already changed. Anchor by the measured PEAK; only a click (peak ~7ms) can be delayed by the cut time directly.
 - Judging A/V sync with short correlation windows — speech is quasi-periodic and a 2–3s window happily locks onto the wrong syllable, inventing a drift. Use 15s+ windows, and remember a PARTIAL render cannot show drift that accumulates over the full timeline.
 - Burning captions/overlays with ffmpeg/PIL — Phase 2 is Remotion-only.
 - Asking "NORMAL ou LOG?" — that is `detect_color.py`'s job now. Ask only on `confidence: low`.

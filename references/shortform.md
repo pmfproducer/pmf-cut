@@ -305,7 +305,33 @@ pick, then render ONE still for design approval before the full render.
 that wants the same zone to after `hook.endSec` (e.g. move a 2.5s cutaway to
 ~4.1s).
 
-## Flash na transição (`elements.flashCut`)
+## Transições — flash (`elements.flashCut`) e swipe (`elements.swipeCut`)
+
+**Two elements, two DIFFERENT sounds.** They share one `transitions[]` array and
+are told apart by `type` (`"flash"` default | `"swipe"`):
+
+| `type` | Picture | SFX the component plays |
+|---|---|---|
+| `flash` | white beam sweeps across, bloom on the cut | `cut-click.mp3` @ 0.9 — dry tick ON the cut frame |
+| `swipe` | opaque accent panel wipes L→R over the seam | `whoosh.mp3` @ 0.5 **anchored by its PEAK**, PLUS `cut-click.mp3` @ 0.55 on the cut for attack |
+
+**A swipe is MOVEMENT — it needs the whoosh.** Giving both types the same click
+flattens them into one event and throws away the swipe's whole reason to exist.
+This is easy to get wrong precisely because the component gets it right and the
+delivery re-mux (below) is where it gets lost — a user caught exactly this.
+
+**`whoosh.mp3` is a 450ms swell whose energy peaks 215ms in.** Delay it by the cut
+time and the audible hit lands ~215ms LATE, after the picture already changed.
+Start it at `cut − peak` so the peak lands ON the cut. A click (peak at 7ms) needs
+no such shift. General rule: **an SFX with a slow attack is anchored by its PEAK,
+never by its file start** — measure the peak, don't assume it.
+
+```json
+"transitions": [{"at": 5.0, "type": "swipe"}, {"at": 9.6, "type": "flash"}]
+```
+
+The swipe panel is painted with `captions.accent` (default `#d32222`), so set that
+even when the chosen caption/headline styles carry no accent.
 
 A light beam whips across the frame with a bloom and a dry click. Data-driven:
 one entry per cut in `transitions[]`, `at` being the cut time **exactly as
@@ -335,10 +361,21 @@ transition means something. Optional per entry: `intensity` (default 1), `sfx`,
   came from had 180ms of silence before the hit; delayed to the cut it would have
   landed 180ms late — after a 230ms effect had already finished. Trim the lead-in
   so the transient is at t=0, then delay by the cut time.
-- **The delivered click is mixed by ffmpeg, not by Remotion.** The delivery
-  re-mux discards Remotion's audio (it drifts), so add the SFX as another input
-  with `adelay=<frame/fps*1000>`. The `<Sfx>` in the component only sounds in a
-  plain `remotion render`.
+- **The delivered SFX are mixed by ffmpeg, not by Remotion.** The delivery re-mux
+  discards Remotion's audio, so every transition sound has to be rebuilt as an
+  ffmpeg input with `adelay=<samples>S`. The `<Sfx>` in the component only sounds
+  in a plain `remotion render`.
+  **Rebuild them PER `type`, not one click for all** — walk `transitions[]` and
+  emit what that type actually plays (table above). Flattening the swipe to a
+  click is the exact failure this section exists to prevent; it passes every
+  numeric check because the audio is present, just wrong.
+  Keep the component's relative balance (whoosh 0.5 : swipe-click 0.55 :
+  flash-click 0.9) and scale all three together to taste.
+  **Verify by residual**, since the SFX are buried under the voice: subtract the
+  gain-matched `cut.mp4` voice from `final.mp4` and look at the 20ms RMS envelope
+  around each `at`. A swipe should peak ON the cut and clearly outrank a flash
+  (measured: +26.5 dB vs +11.4 dB over the music bed). If both read alike, the
+  types got flattened.
 
 ## Style: "Limpa" (`edit: "limpa"`) — no split inserts
 
