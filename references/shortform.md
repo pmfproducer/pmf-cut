@@ -295,7 +295,31 @@ template):
   head, which is fine). The TikTok/MrBeast headline look. Tune `fontSizePx` (68),
   `strokePx` (12), `paddingTop` (330), `lineHeight` (1.06). Drop logo/sign.
 
-Both are static hold, fade+rise at the edges, soft whoosh.
+Both are a static hold with a soft whoosh, and they fade+rise on the way OUT only.
+
+### FRAME 0 IS THE THUMBNAIL — the headline must be whole on it
+
+Schedulers (Meta, TikTok, Buffer, Later…) take the post's cover from the video's
+**first frame**. So the one frame that has to sell the video is the one an
+entrance animation blanks out: the scheduled post shows a face and an empty card,
+and the promise the hook exists to make never reaches the feed.
+
+`hook.introFrames` therefore **defaults to 0** — the headline is fully present at
+frame 0, no fade-in, no rise. Only the exit is animated. Set it >0 only for a
+piece that is not scheduled from its own first frame.
+
+Verify it, don't assume — the failure is invisible in any check that samples a
+later frame:
+```bash
+npx remotion still Reels --frame=0 out/f0.png
+```
+Measure white-pixel coverage in the headline band on frame 0 and on a settled
+frame (say 12); they must match. Measured on this project before the fix: **0.00%
+at frame 0 vs 16.5% settled** — the headline was completely absent from the
+thumbnail while every other frame looked right.
+
+The same logic applies to anything else meant to be read at a glance: if it earns
+its place in the first second, it earns its place on frame 0.
 
 Example (Claude Fable video): "A IA MAIS / PERIGOSA DO MUNDO / ACABOU DE SER
 LIBERADA". Draft 2–3 copy candidates in chat (text — no renders), let the user

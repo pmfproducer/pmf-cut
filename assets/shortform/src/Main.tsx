@@ -56,6 +56,12 @@ export type EditData = {
     // exactly two balanced lines and the size fitted to them (see twoLines /
     // fitHeadline). Anything in `lines` is joined back into one string first.
     text?: string;
+    // Frames of fade+rise on the way IN. DEFAULT 0 — the headline is fully
+    // present on frame 0, because frame 0 is the THUMBNAIL every scheduler
+    // shows for the post. Any entrance animation means the thumbnail is a
+    // faceless frame with no promise on it. Set it >0 only when the piece is
+    // not being scheduled from its own first frame.
+    introFrames?: number;
     // "outline" (default): white text + thick black stroke, no card — the
     //   MrBeast/TikTok headline.
     // "card": Poppins Black on a dark rounded card, UPPERCASE, optional logo row.
@@ -481,7 +487,14 @@ function fitHeadline(lines: [string, string], s: HlStyle): number {
 const HookInner: React.FC<{totalFrames: number}> = ({totalFrames}) => {
   const f = useCurrentFrame();
   const H = D.hook;
-  const enter = interpolate(f, [0, 8], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic)});
+  // FRAME 0 IS THE THUMBNAIL. Schedulers pull the post's cover from the first
+  // frame, so a fade-in hands them a frame with no headline on it — the one
+  // frame that has to sell the video is the one the animation blanks out.
+  // Default introFrames = 0: fully present from frame 0.
+  const introF = H.introFrames ?? 0;
+  const enter = introF > 0
+    ? interpolate(f, [0, introF], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic)})
+    : 1;
   const exit = interpolate(f, [totalFrames - 9, totalFrames], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   const op = Math.min(enter, exit);
   const y = interpolate(enter, [0, 1], [24, 0]);

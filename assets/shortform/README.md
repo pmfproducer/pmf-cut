@@ -43,6 +43,10 @@ Then copy `cut.mp4` into `public/` and generate the data files below.
   },
   "hook": {                          // static headline, first ~4s (always on)
     "enabled": true, "endSec": 4.0,
+    "introFrames": 0,                // KEEP 0. Frame 0 is the post's thumbnail in
+                                     // every scheduler; a fade-in means the cover
+                                     // has no headline on it. >0 only when the
+                                     // piece isn't scheduled from its first frame.
     "style": "card",                 // "card" (default) | "outline"
     "lines": ["A IA MAIS", "PERIGOSA DO MUNDO", "ACABOU DE SER LIBERADA"],
     "logo": "brand/logo.webp",       // card only: public/ path or null
