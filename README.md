@@ -28,12 +28,54 @@ escolhe o estilo da Fase 2 vendo cada opção renderizada de verdade.
 
 ## Instalação
 
-Veja [install.md](install.md). Resumo: clonar, `uv sync`, `ffmpeg` no PATH,
-Node 18+ para a Fase 2, e um symlink em `~/.claude/skills/pmf-cut`.
+### O que precisa estar na máquina
 
-Chaves (todas em `.env`, nunca commitadas): `GROQ_API_KEY` (transcrição),
-`ELEVENLABS_API_KEY` (fontes longas), `PEXELS_API_KEY` (B-roll),
-`TREBLO_API_KEY` (trilha por IA), `GOOGLE_API_KEY` + `GOOGLE_CSE_ID` (imagens).
+| | Para quê | Como instalar |
+|---|---|---|
+| **ffmpeg** | Fases 1 e 3 (corte, cor, áudio) | `brew install ffmpeg` · `apt install ffmpeg` |
+| **Python 3.10+** com [uv](https://docs.astral.sh/uv/) | os helpers | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| **Node 18+** | Fase 2 (Remotion) | `brew install node` ou [nvm](https://github.com/nvm-sh/nvm) |
+| **yt-dlp** *(opcional)* | editar a partir de um link | `brew install yt-dlp` |
+
+### Passo a passo
+
+```bash
+git clone https://github.com/pmfproducer/pmf-cut.git ~/Developer/pmf-cut
+cd ~/Developer/pmf-cut
+uv sync                                   # dependências Python
+cp .env.example .env                      # e preencha a chave (tabela abaixo)
+
+# registrar como skill do agente (Claude Code)
+mkdir -p ~/.claude/skills
+ln -sfn ~/Developer/pmf-cut ~/.claude/skills/pmf-cut
+
+# Fase 2 — a skill do Remotion
+git clone --depth 1 https://github.com/remotion-dev/skills ~/Developer/remotion-skills
+ln -sfn ~/Developer/remotion-skills/skills/remotion ~/.claude/skills/remotion
+```
+
+Depois é só entrar na pasta do material, abrir o agente ali e dizer o que quer:
+*"edite isso num reel"*. Tudo sai em `<pasta>/edit/` — o repo fica limpo.
+
+Symlink a pasta **inteira**, não só o `SKILL.md`: os helpers precisam ficar ao lado.
+Passo a passo completo, com Linux e outros agentes, em [install.md](install.md).
+
+### Chaves de API
+
+Todas vão no `.env` na raiz do repo, que **nunca é commitado** — cada pessoa cria
+as suas. Só a Groq é obrigatória; o agente pede as outras sozinho na primeira vez
+que precisar de cada uma.
+
+| Chave | Para quê | Criar em |
+|---|---|---|
+| `GROQ_API_KEY` **(obrigatória)** | transcrição | https://console.groq.com/keys |
+| `ELEVENLABS_API_KEY` | fontes > 5 min, e voz | https://elevenlabs.io/app/settings/api-keys |
+| `PEXELS_API_KEY` | imagens/vídeos de apoio | https://www.pexels.com/api/ |
+| `TREBLO_API_KEY` | trilha por IA | https://sonauto.ai |
+| `GOOGLE_API_KEY` + `GOOGLE_CSE_ID` | imagens de marcas e pessoas | [credenciais](https://console.cloud.google.com/apis/credentials) · [CSE](https://programmablesearchengine.google.com/controlpanel/all) |
+
+O plano gratuito da Groq dá conta com folga. As imagens também funcionam **sem
+chave nenhuma** via Wikimedia Commons, então a Fase 2 nunca fica travada.
 
 ## Estrutura
 
