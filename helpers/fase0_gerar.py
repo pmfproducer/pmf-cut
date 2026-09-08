@@ -1,0 +1,190 @@
+#!/usr/bin/env python
+"""Fase 0 do PMF Cut: roteiro -> voz (OmniVoice local) -> avatar (HeyGen v3) -> MP4.
+
+Entrega um vídeo bruto pronto para entrar na Fase 1 (corte e cor).
+
+Uso:
+    uv run helpers/fase0_gerar.py --roteiro roteiro.txt --avatar <look_id> --out projeto/
+    uv run helpers/fase0_gerar.py --roteiro roteiro.txt --so-voz          # nao gasta credito
+    uv run helpers/fase0_gerar.py --listar-avatares
+"""
+import argparse, json, os, subprocess, sys, time, urllib.parse, urllib.request
+from pathlib import Path
+
+API = "https://api.heygen.com/v3"
+OMNIVOICE_DIR = Path.home() / "Developer" / "OmniVoice"
+OMNIVOICE_PY = OMNIVOICE_DIR / ".venv" / "bin" / "python"
+VOZ_SALVA = "voz_pablo.pt"
+SR_VOZ = 24000
+
+
+def _key() -> str:
+    k = os.environ.get("HEYGEN_API_KEY")
+    if not k:
+        sys.exit("HEYGEN_API_KEY ausente. Carregue o .env antes de rodar.")
+    return k
+
+
+def _req(metodo: str, caminho: str, corpo=None, binario=None, content_type=None):
+    url = caminho if caminho.startswith("http") else f"{API}{caminho}"
+    cabecalhos = {"X-Api-Key": _key()}
+    dados = None
+    if corpo is not None:
+        dados = json.dumps(corpo).encode()
+        cabecalhos["Content-Type"] = "application/json"
+    elif binario is not None:
+        dados = binario
+        cabecalhos["Content-Type"] = content_type
+    r = urllib.request.Request(url, data=dados, headers=cabecalhos, method=metodo)
+    with urllib.request.urlopen(r) as resp:
+        return json.loads(resp.read())
+
+
+def listar_avatares(filtro: str = "") -> list[dict]:
+    """Devolve os looks PRÓPRIOS da conta, opcionalmente filtrados por nome.
+
+    O filtro `ownership=private` é o que torna isso viável: sem ele a API pagina
+    todo o catálogo público (197 páginas, ~210 s) para achar os mesmos avatares
+    que o recorte privado entrega em 2 páginas.
+    """
+    achados, token = [], None
+    while True:
+        url = (f"{API}/avatars/looks?limit=50&ownership=private"
+               + (f"&token={urllib.parse.quote(token)}" if token else ""))
+        d = _req("GET", url)
+        for a in d.get("data") or []:
+            if not filtro or filtro.lower() in (a.get("name") or "").lower():
+                achados.append(a)
+        token = d.get("next_token")
+        if not d.get("has_more") or not token:
+            break
+    return achados
+
+
+def gerar_voz(texto: str, destino: Path, passos: int = 32) -> Path:
+    """Sintetiza a narração na voz salva do Pablo, usando o venv do OmniVoice."""
+    if not OMNIVOICE_PY.exists():
+        sys.exit(f"OmniVoice não encontrado em {OMNIVOICE_DIR}")
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    script = (
+        "import sys, torch, soundfile as sf\n"
+        "from omnivoice import OmniVoice, VoiceClonePrompt\n"
+        "m = OmniVoice.from_pretrained('k2-fsa/OmniVoice', device_map='mps', dtype=torch.float16)\n"
+        f"p = VoiceClonePrompt.load('{VOZ_SALVA}')\n"
+        "a = m.generate(text=sys.argv[1], voice_clone_prompt=p, num_step=int(sys.argv[3]))\n"
+        f"sf.write(sys.argv[2], a[0], {SR_VOZ})\n"
+    )
+    subprocess.run(
+        [str(OMNIVOICE_PY), "-c", script, texto, str(destino.resolve()), str(passos)],
+        cwd=OMNIVOICE_DIR, check=True,
+    )
+    return destino
+
+
+def subir_audio(caminho: Path) -> str:
+    """Sobe o WAV como asset e devolve a URL que o /v3/videos aceita."""
+    tipos = {".wav": "audio/x-wav", ".mp3": "audio/mpeg", ".m4a": "audio/mp4"}
+    tipo = tipos.get(caminho.suffix.lower())
+    if not tipo:
+        sys.exit(f"formato de áudio não suportado: {caminho.suffix}")
+    d = _req("POST", "https://upload.heygen.com/v1/asset",
+             binario=caminho.read_bytes(), content_type=tipo)
+    dados = d.get("data", d)
+    return dados.get("url") or dados.get("asset_url")
+
+
+def criar_video(look_id: str, audio_url: str, orientacao: str) -> str:
+    corpo = {
+        "avatar_id": look_id,
+        "voice": {"type": "audio", "audio_url": audio_url},
+        "aspect_ratio": "9:16" if orientacao == "vertical" else "16:9",
+        "resolution": "1080p",
+    }
+    d = _req("POST", "/videos", corpo=corpo)
+    return (d.get("data") or d).get("video_id") or (d.get("data") or d).get("id")
+
+
+def esperar(video_id: str, limite_s: int = 1800) -> str:
+    inicio = time.time()
+    while time.time() - inicio < limite_s:
+        d = (_req("GET", f"/videos/{video_id}").get("data") or {})
+        estado = d.get("status")
+        if estado in ("completed", "success"):
+            return d.get("video_url")
+        if estado in ("failed", "error"):
+            sys.exit(f"HeyGen falhou: {d.get('error') or d}")
+        print(f"  ... {estado} ({int(time.time()-inicio)}s)", flush=True)
+        time.sleep(15)
+    sys.exit("Tempo esgotado esperando o HeyGen.")
+
+
+def baixar(url: str, destino: Path) -> Path:
+    with urllib.request.urlopen(url) as r, open(destino, "wb") as f:
+        f.write(r.read())
+    return destino
+
+
+def remuxar(video: Path, audio: Path, destino: Path) -> Path:
+    """Troca o áudio do HeyGen pelo WAV original.
+
+    O HeyGen aplica loudnorm no retorno, o que achata a dinâmica e come SNR.
+    O vídeo já está sincronizado com esse mesmo áudio, então a troca é segura.
+    """
+    subprocess.run([
+        "ffmpeg", "-y", "-hide_banner", "-v", "error",
+        "-i", str(video), "-i", str(audio),
+        "-map", "0:v:0", "-map", "1:a:0",
+        "-c:v", "copy", "-c:a", "aac", "-b:a", "256k",
+        "-shortest", str(destino),
+    ], check=True)
+    return destino
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Fase 0 do PMF Cut: roteiro -> voz -> avatar")
+    ap.add_argument("--roteiro", help="arquivo .txt com a narração")
+    ap.add_argument("--avatar", help="look_id do HeyGen")
+    ap.add_argument("--out", default="fase0", help="pasta de saída")
+    ap.add_argument("--orientacao", choices=["vertical", "horizontal"], default="vertical")
+    ap.add_argument("--passos", type=int, default=32, help="passos de difusão do OmniVoice")
+    ap.add_argument("--so-voz", action="store_true", help="para depois da voz, sem gastar crédito")
+    ap.add_argument("--listar-avatares", action="store_true")
+    a = ap.parse_args()
+
+    if a.listar_avatares:
+        for v in listar_avatares():
+            print(f"{v['id']}  {v.get('name'):<28} {v.get('avatar_type'):<14} {v.get('preferred_orientation')}")
+        return
+
+    if not a.roteiro:
+        ap.error("--roteiro é obrigatório")
+
+    texto = Path(a.roteiro).read_text(encoding="utf-8").strip()
+    saida = Path(a.out)
+    saida.mkdir(parents=True, exist_ok=True)
+
+    print(f"[1/5] voz ({len(texto)} caracteres, {a.passos} passos)")
+    wav = gerar_voz(texto, saida / "voz.wav", a.passos)
+    print(f"      {wav}")
+    if a.so_voz:
+        print("Parado antes do HeyGen (--so-voz). Nenhum crédito gasto.")
+        return
+
+    if not a.avatar:
+        ap.error("--avatar é obrigatório quando o HeyGen roda")
+
+    print("[2/5] subindo áudio")
+    url = subir_audio(wav)
+    print("[3/5] criando vídeo (ESTE PASSO É PAGO)")
+    vid = criar_video(a.avatar, url, a.orientacao)
+    print(f"      video_id={vid}")
+    print("[4/5] renderizando")
+    remoto = esperar(vid)
+    bruto = baixar(remoto, saida / "heygen_bruto.mp4")
+    print("[5/5] remuxando com o áudio original")
+    final = remuxar(bruto, wav, saida / "fase0.mp4")
+    print(f"\nPronto: {final}\nEntra na Fase 1 do PMF Cut como material bruto.")
+
+
+if __name__ == "__main__":
+    main()

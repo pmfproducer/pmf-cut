@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Poppins', system-ui, -apple-system, sans-serif; }
+    a { color: #d2232a; } a:hover { color: #e8434b; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 880px; box-sizing: border-box; color: #eef1f5; padding: 40px 44px; overflow: hidden;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(9,181,183,0.10), transparent 60%),
+    radial-gradient(1000px 500px at -10% 110%, rgba(210,35,42,0.09), transparent 60%),
+    linear-gradient(160deg, #10141b, #08090c);">
+
+  <div style="display: flex; align-items: baseline; gap: 16px; margin-bottom: 6px;">
+    <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.4px;">A jornada</h1>
+    <span style="font-size: 13px; color: #8b94a3;">duas entradas, um caminho comum, e saídas em qualquer ponto</span>
+  </div>
+  <div style="height: 1px; background: rgba(255,255,255,0.09); margin: 16px 0 26px;"></div>
+
+  <!-- ENTRADAS -->
+  <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; color: #8b94a3; margin-bottom: 12px;">ENTRADAS</div>
+
+  <div style="display: flex; align-items: stretch; gap: 18px; margin-bottom: 14px;">
+    <div style="width: 250px; flex-grow: 0; background: rgba(9,181,183,0.07); border: 1px solid rgba(9,181,183,0.32);
+      border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; color: #09b5b7;">A · JÁ GRAVEI</span>
+      <div style="font-size: 15px; font-weight: 700;">Vídeo pronto</div>
+      <div style="font-size: 12px; color: #8b94a3; line-height: 1.45;">Pula a Fase 0 inteira.</div>
+    </div>
+
+    <div style="flex-grow: 1; display: flex; align-items: center; gap: 12px;
+      border: 1px dashed rgba(9,181,183,0.32); border-radius: 14px; padding: 0 22px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#09b5b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 12h15M14 7l5 5-5 5"/></svg>
+      <span style="font-size: 12.5px; color: #09b5b7; font-weight: 600;">vai direto para a Fase 1 — nada de geração no caminho</span>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: stretch; gap: 18px; margin-bottom: 26px;">
+    <div style="width: 250px; flex-grow: 0; background: rgba(210,35,42,0.07); border: 1px solid rgba(210,35,42,0.30);
+      border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; color: #d2232a;">B · NÃO TENHO NADA</span>
+      <div style="font-size: 15px; font-weight: 700;">Gerar do zero</div>
+      <div style="font-size: 12px; color: #8b94a3; line-height: 1.45;">Passa pela Fase 0.</div>
+    </div>
+
+    <div style="flex-grow: 1; background: #0f1218; border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 14px; padding: 16px 18px;">
+      <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;">
+        <span style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; color: #d2232a;">FASE 0</span>
+        <span style="font-size: 12px; color: #8b94a3;">quatro peças independentes — use as que precisar, na ordem que quiser</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+        <div style="background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 11px; padding: 12px 14px;">
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 3px;">Roteiro</div>
+          <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">texto que você escreve</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 11px; padding: 12px 14px;">
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 3px;">Voz</div>
+          <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">clone local, em blocos</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 11px; padding: 12px 14px;">
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 3px;">Avatar</div>
+          <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">seu rosto falando</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 11px; padding: 12px 14px;">
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 3px;">Vídeo</div>
+          <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">único passo pago</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMINHO COMUM -->
+  <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; color: #8b94a3; margin-bottom: 12px;">CAMINHO COMUM</div>
+
+  <div style="display: flex; align-items: stretch; gap: 10px; margin-bottom: 26px;">
+    <div style="flex-grow: 1; background: #0f1218; border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 14px; padding: 15px 18px;">
+      <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; color: #8b94a3; margin-bottom: 5px;">FASE 1</div>
+      <div style="font-size: 14.5px; font-weight: 700; margin-bottom: 3px;">Corte e cor</div>
+      <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">transcreve, escolhe tomadas, corta, grade</div>
+    </div>
+
+    <div style="width: 120px; flex-grow: 0; background: rgba(210,35,42,0.07); border: 1px solid rgba(210,35,42,0.30);
+      border-radius: 14px; padding: 15px 14px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#d2232a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/></svg>
+      <div style="font-size: 11.5px; font-weight: 700; text-align: center; line-height: 1.3;">portão de aprovação</div>
+    </div>
+
+    <div style="flex-grow: 1; background: #0f1218; border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 14px; padding: 15px 18px;">
+      <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; color: #8b94a3; margin-bottom: 5px;">ESTILO</div>
+      <div style="font-size: 14.5px; font-weight: 700; margin-bottom: 3px;">Como vai ficar</div>
+      <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">legenda, elementos, direção visual</div>
+    </div>
+
+    <div style="flex-grow: 1; background: #0f1218; border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 14px; padding: 15px 18px;">
+      <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; color: #8b94a3; margin-bottom: 5px;">FASE 2</div>
+      <div style="font-size: 14.5px; font-weight: 700; margin-bottom: 3px;">Visual</div>
+      <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">Remotion: legendas, B-roll, gráficos</div>
+    </div>
+
+    <div style="flex-grow: 1; background: #0f1218; border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 14px; padding: 15px 18px;">
+      <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; color: #8b94a3; margin-bottom: 5px;">FASE 3</div>
+      <div style="font-size: 14.5px; font-weight: 700; margin-bottom: 3px;">Trilha</div>
+      <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">música mixada sob a voz</div>
+    </div>
+  </div>
+
+  <!-- SAIDAS -->
+  <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; color: #8b94a3; margin-bottom: 12px;">SAÍDAS ANTECIPADAS</div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+    <div style="border: 1px dashed rgba(255,255,255,0.14); border-radius: 12px; padding: 13px 16px;">
+      <div style="font-size: 13px; font-weight: 700; margin-bottom: 3px;">Só a locução</div>
+      <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">Sai depois da Voz. Leva o WAV e acabou.</div>
+    </div>
+    <div style="border: 1px dashed rgba(255,255,255,0.14); border-radius: 12px; padding: 13px 16px;">
+      <div style="font-size: 13px; font-weight: 700; margin-bottom: 3px;">Só o avatar</div>
+      <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">Traz seu próprio áudio, gera o vídeo, sai.</div>
+    </div>
+    <div style="border: 1px dashed rgba(255,255,255,0.14); border-radius: 12px; padding: 13px 16px;">
+      <div style="font-size: 13px; font-weight: 700; margin-bottom: 3px;">Só as legendas</div>
+      <div style="font-size: 11.5px; color: #8b94a3; line-height: 1.4;">Entra com um corte pronto, leva .srt ou karaokê.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
