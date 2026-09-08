@@ -103,15 +103,21 @@
         <h1>Avatar</h1>
         <span class="meta" id="meta-avatar"></span>
         <span class="espaco"></span>
-        <div class="filtros">
-          <label><input type="checkbox" id="soTwin" checked> só digital twin</label>
-          <label>formato
-            <select id="orientacao">
-              <option value="vertical" selected>9:16</option>
-              <option value="horizontal">16:9</option>
-            </select>
-          </label>
+      </div>
+
+      <div class="filtros">
+        <input id="busca" type="search" placeholder="buscar pelo nome">
+        <div class="chips" id="chipsTipo">
+          <button class="chip ativo" data-tipo="">todos</button>
+          <button class="chip" data-tipo="digital_twin">gravados</button>
+          <button class="chip" data-tipo="photo_avatar">de foto</button>
         </div>
+        <div class="chips" id="chipsFormato">
+          <button class="chip ativo" data-formato="portrait">9:16</button>
+          <button class="chip" data-formato="landscape">16:9</button>
+        </div>
+        <span class="espaco"></span>
+        <span class="meta" id="contagem"></span>
       </div>
       <div class="grade" id="grade"><p class="vazio-msg">carregando…</p></div>
     </section>

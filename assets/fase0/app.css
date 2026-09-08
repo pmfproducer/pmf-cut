@@ -141,7 +141,25 @@ textarea:focus { outline: none; border-color: var(--orange); }
 .acao:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
 
 /* ---- avatares ---- */
-.filtros { display: flex; gap: 18px; margin-bottom: 16px; font-size: 12px; color: var(--dim); align-items: center; }
+.filtros {
+  display: flex; gap: 14px; margin-bottom: 18px; align-items: center; flex-wrap: wrap;
+  font-size: 12px; color: var(--dim);
+}
+.filtros input[type="search"] {
+  width: 210px; background: var(--bg0); color: var(--text);
+  border: 1px solid var(--stroke); border-radius: 8px; padding: 7px 11px;
+  font: inherit; font-size: 12.5px;
+}
+.filtros input[type="search"]:focus { outline: none; border-color: var(--orange); }
+.chips { display: flex; gap: 5px; }
+.chip {
+  font: inherit; font-size: 11.5px; font-weight: 600; color: var(--dim);
+  background: transparent; border: 1px solid var(--stroke); border-radius: 99px;
+  padding: 5px 12px; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+}
+.chip:hover { color: var(--text); }
+.chip.ativo { color: var(--text); border-color: var(--orange); background: rgba(210, 35, 42, 0.10); }
+.chip:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 select {
   background: var(--glass-strong); color: var(--text); border: 1px solid var(--stroke);
   border-radius: 8px; padding: 5px 8px; font: inherit; font-size: 12px;

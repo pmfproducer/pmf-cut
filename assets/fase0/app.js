@@ -1,5 +1,6 @@
 const $ = (s) => document.querySelector(s);
-const est = { blocos: [], avatares: [], avatar: null, saldo: null, vozes: null };
+const est = { blocos: [], avatares: [], avatar: null, saldo: null, vozes: null,
+              filtro: { busca: "", tipo: "", formato: "portrait" } };
 
 const mostrar = (s) => $(s).classList.remove("oculto");
 const esconder = (s) => $(s).classList.add("oculto");
@@ -262,10 +263,14 @@ async function carregarAvatares() {
   }
 }
 function pintarAvatares() {
-  const twin = $("#soTwin").checked;
-  const orient = $("#orientacao").value === "vertical" ? "portrait" : "landscape";
+  const { busca, tipo, formato } = est.filtro;
+  const termo = busca.trim().toLowerCase();
   const lista = est.avatares.filter((a) =>
-    (!twin || a.avatar_type === "digital_twin") && a.preferred_orientation === orient);
+    (!tipo || a.avatar_type === tipo)
+    && a.preferred_orientation === formato
+    && (!termo || (a.name || "").toLowerCase().includes(termo)));
+
+  $("#contagem").textContent = `${lista.length} de ${est.avatares.length}`;
   const grade = $("#grade");
   grade.innerHTML = "";
   if (!lista.length) {
@@ -276,7 +281,10 @@ function pintarAvatares() {
     const b = document.createElement("button");
     b.className = "av" + (est.avatar?.id === a.id ? " sel" : "");
     const img = document.createElement("img");
-    img.loading = "lazy";
+    // Sem lazy: a grade é montada com o painel em display:none, e imagem lazy
+    // dentro de container escondido nunca entra no viewport — não carregava.
+    img.loading = "eager";
+    img.decoding = "async";
     img.alt = "";
     img.src = a.preview_image_url || "";
     b.append(img);
@@ -304,16 +312,30 @@ function pintarAvatares() {
   }
 }
 async function escolher(a) {
-  est.avatar = await api("/api/avatar", {
-    id: a.id, nome: a.name, orientacao: $("#orientacao").value,
-  });
+  const orientacao = est.filtro.formato === "portrait" ? "vertical" : "horizontal";
+  est.avatar = await api("/api/avatar", { id: a.id, nome: a.name, orientacao });
   pintarAvatares();
   pintarEstados();
   $("#meta-avatar").textContent = a.name;
-  $("#resumoVideo").textContent = `${a.name} · ${$("#orientacao").value === "vertical" ? "9:16" : "16:9"}`;
+  $("#resumoVideo").textContent = `${a.name} · ${est.filtro.formato === "portrait" ? "9:16" : "16:9"}`;
 }
-$("#soTwin").addEventListener("change", pintarAvatares);
-$("#orientacao").addEventListener("change", pintarAvatares);
+
+$("#busca").addEventListener("input", () => {
+  est.filtro.busca = $("#busca").value;
+  pintarAvatares();
+});
+function ligarChips(seletor, campo) {
+  document.querySelectorAll(`${seletor} .chip`).forEach((c) => {
+    c.addEventListener("click", () => {
+      document.querySelectorAll(`${seletor} .chip`).forEach((o) => o.classList.remove("ativo"));
+      c.classList.add("ativo");
+      est.filtro[campo] = c.dataset[campo];
+      pintarAvatares();
+    });
+  });
+}
+ligarChips("#chipsTipo", "tipo");
+ligarChips("#chipsFormato", "formato");
 
 // ---------- vídeo (pago) ----------
 $("#btRender").addEventListener("click", async () => {
@@ -362,6 +384,7 @@ async function carregar() {
   if (s.avatar) {
     $("#meta-avatar").textContent = s.avatar.nome;
     $("#resumoVideo").textContent = `${s.avatar.nome} · ${s.avatar.orientacao === "vertical" ? "9:16" : "16:9"}`;
+    est.filtro.formato = s.avatar.orientacao === "vertical" ? "portrait" : "landscape";
   }
   if (s.tem_video) {
     $("#final").src = `/media/fase0.mp4?t=${Date.now()}`;
