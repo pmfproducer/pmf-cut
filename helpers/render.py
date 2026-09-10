@@ -611,6 +611,16 @@ def plan_jcut(edl: dict, edit_dir: Path, cfg: dict) -> list[dict]:
     return plan
 
 
+
+def _probe_duration(path: Path) -> float:
+    """Exact stream duration in seconds (ffprobe)."""
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=nw=1:nk=1", str(path)],
+        capture_output=True, text=True).stdout.strip()
+    return float(out) if out else 0.0
+
+
 def assemble_jcut(plan: list[dict], out_path: Path, edit_dir: Path) -> None:
     """Concat the video track, sum the offset audio tracks, mux them together."""
     work = edit_dir / "clips_graded"
@@ -640,10 +650,33 @@ def assemble_jcut(plan: list[dict], out_path: Path, edit_dir: Path) -> None:
          f"alimiter=limit=0.95[a]", "-map", "[a]", "-c:a", "pcm_s16le",
          str(audio_only)], quiet=True)
 
-    total = sum(p["v_out"] - p["v_in"] for p in plan)
+    # The output must be as long as the LONGER track. Summing only the video
+    # durations truncates the tail: ffmpeg quantises each segment to whole frames
+    # (rounding DOWN), while the last take's audio keeps its full length, so the
+    # mix runs past the picture. Measured on a 25fps talking head: 40.000s of
+    # video against 40.094s of audio — the closing word lost its last 94ms of
+    # speech at full level. It is invisible to verify_cut (the delta reads as
+    # frame rounding) and invisible when measuring the SOURCE; only the cut's own
+    # tail, aligned to the end, shows it.
+    v_total = _probe_duration(video_only)
+    a_total = _probe_duration(audio_only)
+    total = max(v_total, a_total)
+
+    vin = ["-i", str(video_only)]
+    vmap = ["-map", "0:v", "-c:v", "copy"]
+    if a_total > v_total + 1e-4:
+        # Cover the shortfall by holding the last frame. Re-encode is required:
+        # tpad cannot be applied to a copied stream.
+        vin = ["-i", str(video_only)]
+        vmap = ["-map", "0:v", "-vf",
+                f"tpad=stop_mode=clone:stop_duration={a_total - v_total + 0.04:.4f}",
+                "-c:v", "libx264", "-crf", "16", "-preset", "medium",
+                "-pix_fmt", "yuv420p", "-color_primaries", "bt709",
+                "-color_trc", "bt709", "-colorspace", "bt709"]
+
     # NO -shortest here: a sub-millisecond audio shortfall would truncate video.
-    run(["ffmpeg", "-y", "-i", str(video_only), "-i", str(audio_only),
-         "-map", "0:v", "-map", "1:a", "-c:v", "copy",
+    run(["ffmpeg", "-y", *vin, "-i", str(audio_only),
+         *vmap, "-map", "1:a",
          "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
          "-t", f"{total:.6f}", "-movflags", "+faststart", str(out_path)], quiet=True)
     video_only.unlink(missing_ok=True)

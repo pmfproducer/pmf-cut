@@ -61,3 +61,6 @@ project.md
 
 # Personal, per-creator templates (never committed — each user builds their own)
 templates/
+
+# canvas do Claude Design: o editor vai embutido, 2,4 MB
+design/**/*-hub.html

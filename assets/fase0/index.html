@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PMF Cut — Fase 0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+
+<header>
+  <div class="marca"><span class="selo"></span> PMF CUT</div>
+  <span class="risco"></span>
+  <span class="projeto" id="projeto"></span>
+  <span class="espaco"></span>
+  <span class="saldo" id="saldo"></span>
+</header>
+
+<div class="corpo">
+  <nav class="trilho" aria-label="Peças do vídeo">
+    <div class="grupo">MATERIAL</div>
+    <button class="peca ativa" data-peca="roteiro">
+      <span class="nome">Roteiro</span><span class="estado" id="e-roteiro">vazio</span></button>
+    <button class="peca com-medidor" data-peca="voz">
+      <span class="cima"><span class="nome">Voz</span><span class="estado" id="e-voz">vazio</span></span>
+      <span class="medidor" id="medidor"></span></button>
+    <button class="peca" data-peca="avatar">
+      <span class="nome">Avatar</span><span class="estado" id="e-avatar">vazio</span></button>
+    <button class="peca" data-peca="video">
+      <span class="nome">Vídeo</span><span class="estado" id="e-video">vazio</span></button>
+
+    <div class="grupo depois">DEPOIS</div>
+    <div class="futuro">Corte</div>
+    <div class="futuro">Visual</div>
+    <div class="futuro">Trilha</div>
+  </nav>
+
+  <main class="painel">
+
+    <section id="p-roteiro">
+      <div class="cabeca">
+        <h1>Roteiro</h1>
+        <span class="meta" id="meta-roteiro"></span>
+      </div>
+      <textarea id="roteiro" placeholder="Escreve o que você vai falar."></textarea>
+      <div class="linha">
+        <button class="btn primary" id="btDividir">Dividir em blocos</button>
+        <span class="meta">Cada frase vira um bloco que você refaz sozinho.</span>
+      </div>
+    </section>
+
+    <section id="p-voz" class="oculto">
+      <div class="cabeca">
+        <h1>Voz</h1>
+        <span class="meta" id="meta-voz"></span>
+        <span class="espaco"></span>
+        <label class="meta">passos
+          <select id="passos">
+            <option value="16">16</option>
+            <option value="32" selected>32</option>
+          </select>
+        </label>
+      </div>
+      <div class="barra-voz">
+        <label class="meta">voz
+          <select id="qualVoz"></select>
+        </label>
+        <button class="acao" id="btNovaVoz">clonar outra</button>
+        <span class="espaco"></span>
+        <span class="meta" id="origemVoz"></span>
+      </div>
+
+      <div class="clonar oculto" id="formVoz">
+        <div class="clonar-linha">
+          <input id="cvOrigem" type="text" placeholder="/caminho/do/video-ou-audio.mov">
+          <input id="cvNome" type="text" placeholder="nome da voz">
+        </div>
+        <div class="clonar-linha">
+          <label class="meta">de <input id="cvInicio" type="number" value="0" min="0" step="0.1"> s</label>
+          <label class="meta">por <input id="cvDur" type="number" value="9" min="3" max="10" step="0.5"> s</label>
+          <input id="cvTexto" type="text" placeholder="transcrição (deixe vazio para transcrever sozinho)">
+          <button class="btn primary" id="btClonar">Clonar</button>
+        </div>
+        <p class="meta">Use take cru de câmera. Áudio já masterizado faz o clone copiar a compressão junto com o timbre.</p>
+      </div>
+
+      <div class="blocos" id="blocos"></div>
+      <div class="linha rodape">
+        <button class="btn primary" id="btFalarTudo">Falar tudo</button>
+        <button class="btn" id="btOuvirTudo">Ouvir tudo</button>
+        <button class="btn oculto" id="btFechar">Fechar a voz</button>
+        <span class="espaco"></span>
+        <span class="meta" id="totalVoz"></span>
+      </div>
+      <audio id="player" class="oculto" controls></audio>
+    </section>
+
+    <section id="p-avatar" class="oculto">
+      <div class="cabeca">
+        <h1>Avatar</h1>
+        <span class="meta" id="meta-avatar"></span>
+        <span class="espaco"></span>
+      </div>
+
+      <div class="filtros">
+        <input id="busca" type="search" placeholder="buscar pelo nome">
+        <div class="chips" id="chipsTipo">
+          <button class="chip ativo" data-tipo="">todos</button>
+          <button class="chip" data-tipo="digital_twin">gravados</button>
+          <button class="chip" data-tipo="photo_avatar">de foto</button>
+        </div>
+        <div class="chips" id="chipsFormato">
+          <button class="chip ativo" data-formato="portrait">9:16</button>
+          <button class="chip" data-formato="landscape">16:9</button>
+        </div>
+        <span class="espaco"></span>
+        <span class="meta" id="contagem"></span>
+      </div>
+      <div class="grade" id="grade"><p class="vazio-msg">carregando…</p></div>
+    </section>
+
+    <section id="p-video" class="oculto">
+      <div class="cabeca"><h1>Vídeo</h1><span class="meta" id="meta-video"></span></div>
+      <div class="aviso">
+        Este é o único passo pago. Sai da carteira HeyGen — saldo <b id="saldo2">—</b>.
+      </div>
+      <div id="resumoVideo" class="meta"></div>
+      <div class="linha">
+        <button class="btn primary" id="btRender">Gerar o vídeo</button>
+      </div>
+      <div class="rodape oculto" id="caixaVideo">
+        <video id="final" controls></video>
+        <div class="linha">
+          <button class="btn primary" id="btProCorte">Mandar pro corte</button>
+          <span class="meta">Áudio original remuxado por cima do retorno do HeyGen.</span>
+        </div>
+        <p class="meta oculto" id="destinoCorte"></p>
+      </div>
+    </section>
+
+    <div id="erro" class="erro oculto"></div>
+  </main>
+</div>
+
+<div id="status" class="status oculto"><span class="giro"></span><span id="statusTxt"></span></div>
+
+<script src="/assets/app.js"></script>
+</body>
+</html>

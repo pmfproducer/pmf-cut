@@ -78,6 +78,8 @@ Helpers live in `helpers/`, resolved relative to this SKILL.md (symlinked at `~/
 
 ## Helpers
 
+Phase 0 (see the Phase 0 section): **`fase0_server.py`** (the hub app) · `fase0_gerar.py` (HeyGen v3 + CLI) · `fase0_voz.py` (blocks + OmniVoice) · `omnivoice_worker.py` (keeps the model loaded between requests — loading costs ~10 s).
+
 Phase 1:
 - **`ingest_url.py <url> --dest <videos_dir> [--section 12:00-25:30] [--max-height 1080]`** — edit from a link: yt-dlp → MP4 (≤1080p, ascii-safe filename) straight into the videos dir; from there it's a source like any other. `--section` downloads ONLY a time range of a longform source (keyframe-accurate) — the cheap way to clip minutes 12–25 of a 1h video. `--simulate` prints title/duration/resolution without downloading (confirm before big fetches; run those in the background).
 - **`transcribe.py <video> --edit-dir <edit> [--language pt] [--backend auto|groq|elevenlabs]`** — word-level, cached. `backend=auto` (default): ElevenLabs Scribe for sources >5 min (when `ELEVENLABS_API_KEY` set), else Groq Whisper. Audio uploads as CBR 64kbps mono MP3 (~0.5 MB/min); oversized audio auto-chunks **by bytes**, so every chunk is guaranteed under Groq's 25 MB cap regardless of length. Chunks fetch **in parallel** with per-chunk resume cache and 5x backoff retries (provider blips don't restart the job).
@@ -227,6 +229,59 @@ entries exist here.
 - `editData` — insert/hook/behind timings → edit-data.json → re-render Phase 2.
 
 Then delete `preview_edits.json` and update `state.json`.
+
+# PHASE 0 — generation (optional, before the cut)
+
+For when there is **no footage yet** — only a script — and the video will be a
+talking avatar. Ask; never assume a job starts here. With footage, go to Phase 1.
+
+**Run the hub** (a local app, not a pipeline — script, voice, avatar and video
+each keep their own state and open in any order):
+
+```bash
+uv run helpers/fase0_server.py --out <videos_dir>/fase0 [--port 4830]
+```
+
+Open it in the Browser pane (a `launch.json` entry shaped like the preview one).
+The `.env` at the repo root is read on its own.
+
+| Piece | What happens | Cost |
+|---|---|---|
+| Roteiro | the text is split into blocks so ONE sentence can be redone alone | free |
+| Voz | each block spoken by OmniVoice, locally, then joined with a 0.22s breath | free |
+| Avatar | the account's OWN HeyGen looks (`ownership=private`: 2 pages instead of 197) | free |
+| Vídeo | HeyGen v3 renders the avatar lip-synced to that voice | **PAID** |
+
+**The video render spends real credit — get an explicit yes before triggering
+it**, the same way a purchase needs one. The app shows the wallet balance.
+"Pro corte" copies `fase0.mp4` into `<out>/../videos/`, where it becomes an
+ordinary Phase-1 source.
+
+Things the code already encodes — do not undo them:
+- **HeyGen's audio is thrown away.** It loudnorms the return and eats SNR; the
+  original WAV is re-muxed over the picture. **No `-shortest`** in that mux — it
+  closes on the shorter stream and also eats the AAC priming: measured, 2.30s of
+  voice came out as 1.963s, the last word cut. If the WAV is longer, the last
+  frame is held.
+- **Blocks break only on `.` `!` `?`.** A colon announces a continuation; splitting
+  there made "Terceiro, agenda: dia, hora…" two separately synthesized blocks, and
+  the voice closed "agenda" as a sentence end with a breath before "dia".
+- **Library functions raise `Fase0Erro`, never `sys.exit`.** They run inside the
+  server's threads, where SystemExit escapes `except Exception`: a failed paid
+  render stayed on "renderizando" forever.
+- **The server only answers its own address.** It serves files and triggers a
+  paid render, so: paths are confined to their folder (`/assets/../../.env` used to
+  return the key file), `Host` must be `127.0.0.1`/`localhost` on its port (DNS
+  rebinding), and POST must be JSON from our own Origin (a `text/plain` POST from
+  any open website used to start the render). Never loosen these to "fix" a call.
+
+**Voices** live in the OmniVoice install (`~/Developer/OmniVoice/vozes/`, catalog in
+`vozes.json`), never in this repo — **this repo is public, and a `.pt` voice
+prompt is a clone of a real person's voice.** Cloning from the app needs a RAW
+camera/mic take: mastered audio makes the clone copy the compression and EQ too.
+
+CLI without the app: `fase0_gerar.py --roteiro r.txt --so-voz` (free, stops before
+HeyGen) · `--listar-avatares` · `--avatar <look_id>` (paid).
 
 ---
 
@@ -465,6 +520,9 @@ Append one section per session at `<edit>/project.md`:
 On startup, read it if it exists and summarize the last session in one sentence before asking whether to continue.
 
 ## Anti-patterns
+
+- Triggering the Phase-0 video render (`/api/video`, `fase0_gerar.py --avatar`)
+  without an explicit yes. It is the only step in the pipeline that spends money.
 
 - Starting Phase 2 before cut approval (the gate is a Hard Rule).
 - Asking the style questions in chat, or starting Phase 2 before the pick lands.

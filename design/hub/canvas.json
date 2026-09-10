@@ -1,0 +1,20 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "App" },
+    { "id": "page-2", "name": "Estrutura" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html",       "x": 0,   "y": 0,   "w": 1240, "h": 780, "page": "page-1", "title": "Voz — cara nova" },
+    { "file": "BlocoOnda.dc.html",  "x": 0,   "y": 900, "w": 700,  "h": 190, "page": "page-1", "title": "Bloco · onda embaixo" },
+    { "file": "BlocoBarra.dc.html", "x": 790, "y": 900, "w": 700,  "h": 170, "page": "page-1", "title": "Bloco · barra" },
+    { "file": "BlocoDenso.dc.html", "x": 1580,"y": 900, "w": 700,  "h": 160, "page": "page-1", "title": "Bloco · onda em linha" },
+    { "file": "Mapa.dc.html",       "x": 0,   "y": 0,   "w": 1440, "h": 880, "page": "page-2", "title": "Mapa da jornada" }
+  ],
+  "annotations": [
+    { "id": "nota-cara", "x": 0, "y": -230, "w": 1240, "page": "page-1",
+      "text": "As formas de onda são reais — extraídas dos 4 blocos que o app gerou de verdade, não desenhadas.\n\nO que mudou: onda por bloco (a ferramenta é de áudio e não mostrava áudio), medidor de blocos falados no trilho, cabeçalho com peso, luz interna nas superfícies, e mais respiro entre as linhas.\nTokens, fonte e cores continuam os do app." },
+    { "id": "nota-blocos", "x": 0, "y": 1130, "w": 700, "page": "page-1",
+      "text": "Três tratamentos do bloco. O Main usa o primeiro.\nOnda embaixo: mais caráter, ocupa 2 linhas.\nBarra: mais calmo, mostra duração relativa.\nOnda em linha: mais denso, cabe mais bloco na tela." }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

@@ -393,8 +393,13 @@ transition means something. Optional per entry: `intensity` (default 1), `sfx`,
   emit what that type actually plays (table above). Flattening the swipe to a
   click is the exact failure this section exists to prevent; it passes every
   numeric check because the audio is present, just wrong.
-  Keep the component's relative balance (whoosh 0.5 : swipe-click 0.55 :
-  flash-click 0.9) and scale all three together to taste.
+  Keep the component's relative BALANCE (whoosh : swipe-click : flash-click =
+  0.5 : 0.55 : 0.9) and scale all three together to taste. **Start about 3 dB
+  under those numbers** — `0.35 : 0.38 : 0.63`. The listed values were set against
+  a music bed; with voice only (`musicAI` off) there is nothing to compete with
+  and the transition reads as a bang. A user asked for exactly this on a
+  voice-only reel. Scale the SET, never one of them: the whoosh/click ratio is
+  what makes a swipe read as movement rather than a tick.
   **Verify by residual**, since the SFX are buried under the voice: subtract the
   gain-matched `cut.mp4` voice from `final.mp4` and look at the 20ms RMS envelope
   around each `at`. A swipe should peak ON the cut and clearly outrank a flash
@@ -418,6 +423,15 @@ Two consequences of the frame never being split, both easy to miss:
 - **`captions.windows` has nothing to dodge.** Those entries only exist to move
   the caption off a split seam. Leave the array empty; a stale window from a
   previous render shoves the caption up for no reason.
+- **Raise the caption to `paddingBottom: 500`** (the default 420 is tuned for the
+  split layouts). With the speaker in FULL FRAME there is no seam pushing the
+  caption down and no art competing for the lower third, so the extra ~80px is
+  free — and it is what clears TikTok's UI, not just Instagram's. Measured on a
+  1080×1920 render: at 420 the caption's base sits 412px off the bottom, which
+  clears Instagram's ~320px chrome with room but lands exactly on the ~400px band
+  TikTok's own caption can reach. At 500 both are clear. Verify by rendering the
+  same frame with `captions.enabled` true and false and differencing them — white
+  pixels alone catch the mug, the shirt and the highlights, not the text.
 
 **This is the default** (`STYLE_CATALOG.edits[0]`), so it is also what a user who
 never opens the Estilo tab gets. Split inserts are opted INTO, not out of. It is a
