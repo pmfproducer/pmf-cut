@@ -201,6 +201,20 @@ video { background: #000; max-height: 460px; }
 @keyframes gira { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .giro { animation: none; } }
 
+/* Painel do navegador do app: ~330 px úteis. Com o trilho fixo de 244 px o
+   conteúdo ficava com 54 px. Abaixo de 720 px o trilho vira uma faixa de abas. */
+@media (max-width: 720px) {
+  .corpo { flex-direction: column; }
+  .trilho { width: auto; display: flex; overflow-x: auto; padding: 4px; flex: 0 0 auto;
+            scrollbar-width: none; }
+  .trilho::-webkit-scrollbar { display: none; }
+  .trilho .grupo, .trilho .futuro { display: none; }
+  .peca { width: auto; flex: 0 0 auto; padding: 10px 14px; border-left: none;
+          border-bottom: 3px solid transparent; }
+  .peca.ativa { border-bottom-color: var(--orange); }
+  .painel { padding: 18px 16px; }
+}
+
 /* ---- seleção e clonagem de voz ---- */
 .barra-voz {
   display: flex; align-items: center; gap: 14px; margin-bottom: 16px;
