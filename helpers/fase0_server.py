@@ -110,7 +110,7 @@ def _job(alvo, *args) -> str:
 
 
 def _tarefa_voz(jid: str, qual: int | None, passos: int) -> dict:
-    escolhida = (_ler("voz.json", None) or {}).get("voz", voz.VOZ_PADRAO)
+    escolhida = (_ler("voz.json", None) or {}).get("voz", voz.padrao())
     blocos = _ler("blocos.json", [])
     if not blocos:
         raise RuntimeError("escreva o roteiro antes")
@@ -251,7 +251,7 @@ class Handler(BaseHTTPRequestHandler):
             })
         if rota == "/api/vozes":
             return self._json({"vozes": voz.catalogo(),
-                               "escolhida": (_ler("voz.json", None) or {}).get("voz", voz.VOZ_PADRAO)})
+                               "escolhida": (_ler("voz.json", None) or {}).get("voz", voz.padrao())})
         if rota == "/api/avatares":
             global _avatares
             if not _avatares:
@@ -299,7 +299,7 @@ class Handler(BaseHTTPRequestHandler):
             escolha = corpo.get("voz")
             if escolha not in voz.catalogo():
                 return self._json({"erro": "voz desconhecida"}, 400)
-            atual = (_ler("voz.json", None) or {}).get("voz", voz.VOZ_PADRAO)
+            atual = (_ler("voz.json", None) or {}).get("voz", voz.padrao())
             _escrever("voz.json", {"voz": escolha})
             if escolha != atual:
                 _zerar_audio()

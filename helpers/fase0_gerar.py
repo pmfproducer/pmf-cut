@@ -12,10 +12,6 @@ import argparse, json, os, subprocess, sys, time, urllib.parse, urllib.request
 from pathlib import Path
 
 API = "https://api.heygen.com/v3"
-OMNIVOICE_DIR = Path.home() / "Developer" / "OmniVoice"
-OMNIVOICE_PY = OMNIVOICE_DIR / ".venv" / "bin" / "python"
-VOZ_SALVA = "voz_pablo.pt"
-SR_VOZ = 24000
 
 
 class Fase0Erro(RuntimeError):
@@ -72,22 +68,17 @@ def listar_avatares(filtro: str = "") -> list[dict]:
 
 
 def gerar_voz(texto: str, destino: Path, passos: int = 32) -> Path:
-    """Sintetiza a narração na voz salva do Pablo, usando o venv do OmniVoice."""
-    if not OMNIVOICE_PY.exists():
-        raise Fase0Erro(f"OmniVoice não encontrado em {OMNIVOICE_DIR}")
-    destino.parent.mkdir(parents=True, exist_ok=True)
-    script = (
-        "import sys, torch, soundfile as sf\n"
-        "from omnivoice import OmniVoice, VoiceClonePrompt\n"
-        "m = OmniVoice.from_pretrained('k2-fsa/OmniVoice', device_map='mps', dtype=torch.float16)\n"
-        f"p = VoiceClonePrompt.load('{VOZ_SALVA}')\n"
-        "a = m.generate(text=sys.argv[1], voice_clone_prompt=p, num_step=int(sys.argv[3]))\n"
-        f"sf.write(sys.argv[2], a[0], {SR_VOZ})\n"
-    )
-    subprocess.run(
-        [str(OMNIVOICE_PY), "-c", script, texto, str(destino.resolve()), str(passos)],
-        cwd=OMNIVOICE_DIR, check=True,
-    )
+    """Sintetiza a narração com a voz do catálogo — a mesma que o app usa.
+
+    Antes lia um arquivo solto na raiz do OmniVoice, que só existia numa máquina.
+    """
+    import fase0_voz as voz
+    try:
+        voz.falar(texto, destino, passos)
+    except RuntimeError as e:
+        raise Fase0Erro(str(e)) from e
+    finally:
+        voz.encerrar()
     return destino
 
 

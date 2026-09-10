@@ -16,10 +16,13 @@ from pathlib import Path
 
 import requests
 
-OMNIVOICE_DIR = Path.home() / "Developer" / "OmniVoice"
+# Onde o OmniVoice foi instalado (install.md, passo da Fase 0). OMNIVOICE_DIR no
+# .env muda o local; o padrão é o do instalador.
+OMNIVOICE_DIR = Path(os.environ.get("OMNIVOICE_DIR")
+                     or Path.home() / "Developer" / "OmniVoice").expanduser()
 OMNIVOICE_PY = OMNIVOICE_DIR / ".venv" / "bin" / "python"
 VOZES = OMNIVOICE_DIR / "vozes"
-VOZ_PADRAO = "pablo"
+VOZ_PREFERIDA = os.environ.get("PMF_VOZ", "pablo")
 SR = 24000
 PAUSA_S = 0.22          # respiro entre blocos, medido como natural no teste de 50 s
 LIMITE_BLOCO = 180      # caracteres: junta frases curtas, separa as longas
@@ -85,9 +88,24 @@ def catalogo() -> dict:
     return json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
 
 
-def falar(texto: str, destino: Path, passos: int = 32, voz: str = VOZ_PADRAO) -> float:
+def padrao() -> str | None:
+    """A voz preferida se existir; senão a primeira do catálogo; senão None.
+
+    Numa instalação nova o catálogo começa vazio — a voz de ninguém vem pronta.
+    """
+    vozes = catalogo()
+    if VOZ_PREFERIDA in vozes:
+        return VOZ_PREFERIDA
+    return next(iter(vozes), None)
+
+
+def falar(texto: str, destino: Path, passos: int = 32, voz: str | None = None) -> float:
     """Sintetiza um bloco com a voz escolhida. Devolve a duração em segundos."""
     vozes = catalogo()
+    voz = voz or padrao()
+    if not vozes:
+        raise RuntimeError("nenhuma voz clonada ainda: na aba Voz, use 'clonar outra' "
+                           "com um trecho CRU de câmera/microfone")
     if voz not in vozes:
         raise RuntimeError(f"voz desconhecida: {voz}")
     destino.parent.mkdir(parents=True, exist_ok=True)
