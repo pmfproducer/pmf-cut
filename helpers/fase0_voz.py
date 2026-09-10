@@ -29,8 +29,14 @@ _trava = threading.Lock()
 
 
 def dividir(texto: str) -> list[str]:
-    """Quebra em blocos de fala, agrupando frases curtas até `LIMITE_BLOCO`."""
-    frases = [s.strip() for s in re.split(r"(?<=[.!?:])\s+", texto.strip()) if s.strip()]
+    """Quebra em blocos de fala, agrupando frases curtas até `LIMITE_BLOCO`.
+
+    Só `.`, `!` e `?` fecham frase. Dois-pontos ANUNCIAM continuação: quebrar ali
+    fazia "Terceiro, agenda: dia, hora…" virar dois blocos, cada um sintetizado
+    sozinho — a voz fechava "agenda" com entonação de fim de frase e o `juntar`
+    ainda enfiava um respiro antes de "dia".
+    """
+    frases = [s.strip() for s in re.split(r"(?<=[.!?])\s+", texto.strip()) if s.strip()]
     blocos: list[str] = []
     atual = ""
     for f in frases:
