@@ -8,6 +8,11 @@ Vertical (Reels/TikTok/Shorts) e horizontal (YouTube).
 
 ## Como funciona
 
+**Fase 0 — a geração (opcional).** Sem material gravado, só um roteiro: um app
+local divide o texto em blocos, fala cada um com a sua voz clonada (OmniVoice,
+roda na máquina, grátis) e manda o avatar do HeyGen dublar. Só o render do
+avatar é pago — e só roda quando você confirma.
+
 **Fase 1 — o corte.** Transcreve, escolhe os melhores takes, corta no silêncio,
 detecta o perfil de cor da câmera e aplica a correção certa. Sai um `cut.mp4`
 limpo. Nada de texto ou gráfico ainda — só a edição.
@@ -70,9 +75,14 @@ que precisar de cada uma.
 |---|---|---|
 | `GROQ_API_KEY` **(obrigatória)** | transcrição | https://console.groq.com/keys |
 | `ELEVENLABS_API_KEY` | fontes > 5 min, e voz | https://elevenlabs.io/app/settings/api-keys |
+| `HEYGEN_API_KEY` | avatar da Fase 0 | https://app.heygen.com/settings?nav=API |
 | `PEXELS_API_KEY` | imagens/vídeos de apoio | https://www.pexels.com/api/ |
 | `TREBLO_API_KEY` | trilha por IA | https://sonauto.ai |
 | `GOOGLE_API_KEY` + `GOOGLE_CSE_ID` | imagens de marcas e pessoas | [credenciais](https://console.cloud.google.com/apis/credentials) · [CSE](https://programmablesearchengine.google.com/controlpanel/all) |
+
+A voz da Fase 0 usa o [OmniVoice](https://github.com/k2-fsa/OmniVoice) instalado em
+`~/Developer/OmniVoice`. Os arquivos de voz clonada ficam lá — **nunca neste
+repositório, que é público**.
 
 O plano gratuito da Groq dá conta com folga. As imagens também funcionam **sem
 chave nenhuma** via Wikimedia Commons, então a Fase 2 nunca fica travada.
