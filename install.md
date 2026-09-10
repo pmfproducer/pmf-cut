@@ -185,9 +185,16 @@ model on `mps`. Check first and stop here otherwise:
 
     ```bash
     test -d ~/Developer/OmniVoice || git clone https://github.com/k2-fsa/OmniVoice ~/Developer/OmniVoice
-    cd ~/Developer/OmniVoice && uv sync          # creates .venv (Python 3.11 works)
+    cd ~/Developer/OmniVoice && uv sync --python 3.11   # creates .venv
     .venv/bin/python -c "import torch, omnivoice; print('mps:', torch.backends.mps.is_available())"
     ```
+
+    **Pin the Python.** OmniVoice accepts any Python ≥ 3.10 and ships no
+    `.python-version`, so a bare `uv sync` picks the newest interpreter on the
+    machine — Homebrew's 3.14 here — and torch 2.8 has no wheels for 3.14 on Mac
+    ARM (checked with `uv pip compile`): the install dies on a dependency error
+    that never mentions the Python version. 3.11 resolves; `brew install
+    python@3.11` if it is missing.
 
     Installed somewhere else? Put `OMNIVOICE_DIR=<path>` in pmf-cut's `.env`.
     The ~3 GB model (`k2-fsa/OmniVoice`) is fetched from Hugging Face on the first

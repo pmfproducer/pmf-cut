@@ -70,7 +70,7 @@ Pule se você sempre grava com câmera. São ~3 GB de modelo e uma conta HeyGen.
 ```bash
 # 1. o motor de voz, na pasta e no venv que o PMF Cut procura
 git clone https://github.com/k2-fsa/OmniVoice ~/Developer/OmniVoice
-cd ~/Developer/OmniVoice && uv sync
+cd ~/Developer/OmniVoice && uv sync --python 3.11   # o 3.14 não tem torch 2.8
 
 # 2. a chave do HeyGen no .env do PMF Cut (tabela abaixo)
 
