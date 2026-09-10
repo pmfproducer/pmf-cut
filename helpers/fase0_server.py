@@ -36,13 +36,45 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+import os
+
 import fase0_gerar as f0
 import fase0_voz as voz
 
-APP = Path(__file__).resolve().parent.parent / "assets" / "fase0"
+RAIZ = Path(__file__).resolve().parent.parent
+APP = RAIZ / "assets" / "fase0"
 TRABALHO = Path("fase0")
+PORTA = 4830
 JOBS: dict[str, dict] = {}
 _avatares: list[dict] = []
+
+
+def _carregar_env() -> None:
+    """Lê o .env da raiz do repo sem sobrescrever o que já está no ambiente.
+
+    Sem isso, rodar o servidor como o docstring manda deixava o app em branco:
+    a primeira chamada ao HeyGen não achava a chave.
+    """
+    arq = RAIZ / ".env"
+    if not arq.is_file():
+        return
+    for linha in arq.read_text(encoding="utf-8").splitlines():
+        linha = linha.strip()
+        if not linha or linha.startswith("#") or "=" not in linha:
+            continue
+        k, v = linha.split("=", 1)
+        os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+def _dentro(base: Path, relativo: str) -> Path | None:
+    """Resolve `relativo` dentro de `base`, ou None se escapar dela.
+
+    As rotas /assets e /media recebiam o caminho cru: `/assets/../../.env`
+    entregava o arquivo de chaves.
+    """
+    raiz = base.resolve()
+    alvo = (raiz / relativo).resolve()
+    return alvo if alvo.is_relative_to(raiz) else None
 
 
 def _ler(nome: str, padrao):
@@ -171,20 +203,41 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, dados, status: int = 200):
         self._envia(json.dumps(dados, ensure_ascii=False).encode(), "application/json", status)
 
-    def _arquivo(self, caminho: Path):
-        if not caminho.is_file():
+    def _origem_ok(self) -> bool:
+        """Só atende quem fala com o servidor pelo próprio endereço.
+
+        - Host: barra DNS rebinding (um domínio externo apontado para 127.0.0.1
+          passaria a LER as respostas, .env incluído).
+        - POST: exige JSON e, havendo Origin, que seja a nossa. Um POST text/plain
+          de qualquer site aberto no navegador disparava o render PAGO.
+        """
+        validos = {f"127.0.0.1:{PORTA}", f"localhost:{PORTA}"}
+        if self.headers.get("Host", "") not in validos:
+            return False
+        if self.command == "POST":
+            if not (self.headers.get("Content-Type") or "").startswith("application/json"):
+                return False
+            origem = self.headers.get("Origin")
+            if origem and urlparse(origem).netloc not in validos:
+                return False
+        return True
+
+    def _arquivo(self, caminho: Path | None):
+        if caminho is None or not caminho.is_file():
             return self._envia(b"nao encontrado", "text/plain", 404)
         tipo = mimetypes.guess_type(caminho.name)[0] or "application/octet-stream"
         self._envia(caminho.read_bytes(), tipo)
 
     def do_GET(self):
+        if not self._origem_ok():
+            return self._envia(b"proibido", "text/plain", 403)
         rota = unquote(urlparse(self.path).path)
         if rota == "/":
             return self._arquivo(APP / "index.html")
         if rota.startswith("/assets/"):
-            return self._arquivo(APP / rota[8:])
+            return self._arquivo(_dentro(APP, rota[8:]))
         if rota.startswith("/media/"):
-            return self._arquivo(TRABALHO / rota[7:])
+            return self._arquivo(_dentro(TRABALHO, rota[7:]))
         if rota == "/api/estado":
             return self._json({
                 "pasta": str(TRABALHO.resolve()),
@@ -209,6 +262,8 @@ class Handler(BaseHTTPRequestHandler):
         return self._envia(b"nao encontrado", "text/plain", 404)
 
     def do_POST(self):
+        if not self._origem_ok():
+            return self._envia(b"proibido", "text/plain", 403)
         rota = urlparse(self.path).path
         corpo = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
 
@@ -284,12 +339,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    global TRABALHO
+    global TRABALHO, PORTA
+    _carregar_env()
     ap = argparse.ArgumentParser(description="Servidor da Fase 0 do PMF Cut")
     ap.add_argument("--out", default="fase0", help="pasta de trabalho")
     ap.add_argument("--port", type=int, default=4830)
     a = ap.parse_args()
     TRABALHO = Path(a.out)
+    PORTA = a.port
     TRABALHO.mkdir(parents=True, exist_ok=True)
     print(f"Fase 0 em http://127.0.0.1:{a.port}  (pasta: {TRABALHO.resolve()})")
     try:

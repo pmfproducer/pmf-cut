@@ -18,10 +18,20 @@ VOZ_SALVA = "voz_pablo.pt"
 SR_VOZ = 24000
 
 
+class Fase0Erro(RuntimeError):
+    """Falha esperada da Fase 0 (chave ausente, HeyGen recusou, tempo esgotado).
+
+    Estas funções rodam também dentro do servidor. `sys.exit` numa thread levanta
+    SystemExit, que escapa do `except Exception`: um render PAGO que falhava no
+    HeyGen deixava a tela em "renderizando" para sempre, e sem a chave o
+    /api/estado derrubava a conexão. Só o `main()` converte isto em saída.
+    """
+
+
 def _key() -> str:
     k = os.environ.get("HEYGEN_API_KEY")
     if not k:
-        sys.exit("HEYGEN_API_KEY ausente. Carregue o .env antes de rodar.")
+        raise Fase0Erro("HEYGEN_API_KEY ausente. Carregue o .env antes de rodar.")
     return k
 
 
@@ -64,7 +74,7 @@ def listar_avatares(filtro: str = "") -> list[dict]:
 def gerar_voz(texto: str, destino: Path, passos: int = 32) -> Path:
     """Sintetiza a narração na voz salva do Pablo, usando o venv do OmniVoice."""
     if not OMNIVOICE_PY.exists():
-        sys.exit(f"OmniVoice não encontrado em {OMNIVOICE_DIR}")
+        raise Fase0Erro(f"OmniVoice não encontrado em {OMNIVOICE_DIR}")
     destino.parent.mkdir(parents=True, exist_ok=True)
     script = (
         "import sys, torch, soundfile as sf\n"
@@ -86,7 +96,7 @@ def subir_audio(caminho: Path) -> str:
     tipos = {".wav": "audio/x-wav", ".mp3": "audio/mpeg", ".m4a": "audio/mp4"}
     tipo = tipos.get(caminho.suffix.lower())
     if not tipo:
-        sys.exit(f"formato de áudio não suportado: {caminho.suffix}")
+        raise Fase0Erro(f"formato de áudio não suportado: {caminho.suffix}")
     d = _req("POST", "https://upload.heygen.com/v1/asset",
              binario=caminho.read_bytes(), content_type=tipo)
     dados = d.get("data", d)
@@ -112,10 +122,10 @@ def esperar(video_id: str, limite_s: int = 1800) -> str:
         if estado in ("completed", "success"):
             return d.get("video_url")
         if estado in ("failed", "error"):
-            sys.exit(f"HeyGen falhou: {d.get('error') or d}")
+            raise Fase0Erro(f"HeyGen falhou: {d.get('error') or d}")
         print(f"  ... {estado} ({int(time.time()-inicio)}s)", flush=True)
         time.sleep(15)
-    sys.exit("Tempo esgotado esperando o HeyGen.")
+    raise Fase0Erro("Tempo esgotado esperando o HeyGen.")
 
 
 def baixar(url: str, destino: Path) -> Path:
@@ -124,23 +134,51 @@ def baixar(url: str, destino: Path) -> Path:
     return destino
 
 
+def _duracao(arquivo: Path, fluxo: str) -> float:
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", f"{fluxo}:0",
+         "-show_entries", "stream=duration", "-of", "default=nw=1:nk=1", str(arquivo)],
+        capture_output=True, text=True).stdout.strip()
+    try:
+        return float(out)
+    except ValueError:
+        return 0.0
+
+
 def remuxar(video: Path, audio: Path, destino: Path) -> Path:
     """Troca o áudio do HeyGen pelo WAV original.
 
     O HeyGen aplica loudnorm no retorno, o que achata a dinâmica e come SNR.
     O vídeo já está sincronizado com esse mesmo áudio, então a troca é segura.
+
+    SEM `-shortest`: ele fecha pelo fluxo mais curto e ainda come o priming do
+    AAC — medido: vídeo 2,00 s + WAV 2,30 s saíam com 1,963 s de áudio, a última
+    palavra amputada. Se o WAV for mais longo, o último quadro é segurado.
     """
+    dv, da = _duracao(video, "v"), _duracao(audio, "a")
+    if da > dv + 0.001:
+        v = ["-vf", f"tpad=stop_mode=clone:stop_duration={da - dv + 0.04:.4f}",
+             "-c:v", "libx264", "-crf", "16", "-preset", "medium", "-pix_fmt", "yuv420p"]
+    else:
+        v = ["-c:v", "copy"]
     subprocess.run([
         "ffmpeg", "-y", "-hide_banner", "-v", "error",
         "-i", str(video), "-i", str(audio),
-        "-map", "0:v:0", "-map", "1:a:0",
-        "-c:v", "copy", "-c:a", "aac", "-b:a", "256k",
-        "-shortest", str(destino),
+        "-map", "0:v:0", "-map", "1:a:0", *v,
+        "-c:a", "aac", "-b:a", "256k",
+        "-t", f"{max(da, dv):.6f}", str(destino),
     ], check=True)
     return destino
 
 
 def main() -> None:
+    try:
+        _main()
+    except Fase0Erro as e:
+        sys.exit(str(e))
+
+
+def _main() -> None:
     ap = argparse.ArgumentParser(description="Fase 0 do PMF Cut: roteiro -> voz -> avatar")
     ap.add_argument("--roteiro", help="arquivo .txt com a narração")
     ap.add_argument("--avatar", help="look_id do HeyGen")
